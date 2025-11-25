@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PebbleOS Git Repository Contribution Report</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .header .stats-summary {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px 30px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-box .number {
+            font-size: 2em;
+            font-weight: bold;
+            display: block;
+        }
+
+        .stat-box .label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .section {
+            padding: 40px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .section:last-child {
+            border-bottom: none;
+        }
+
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.8em;
+        }
+
+        .section p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 30px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+        }
+
+        th {
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 0.5px;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #eee;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .rank {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .rank.gold {
+            background: linear-gradient(135deg, #f5af19, #f12711);
+        }
+
+        .rank.silver {
+            background: linear-gradient(135deg, #bdc3c7, #7f8c8d);
+        }
+
+        .rank.bronze {
+            background: linear-gradient(135deg, #cd7f32, #8b4513);
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #eee;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+
+        .file-list {
+            margin: 0;
+            padding-left: 20px;
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .file-list li {
+            margin-bottom: 4px;
+        }
+
+        .footer {
+            padding: 30px 40px;
+            background: #f8f9fa;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .date-range {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 10px 20px;
+            border-radius: 6px;
+            margin-top: 15px;
+            display: inline-block;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .header .stats-summary {
+                gap: 20px;
+            }
+
+            .stat-box {
+                padding: 15px 20px;
+            }
+
+            .stat-box .number {
+                font-size: 1.5em;
+            }
+
+            .section {
+                padding: 20px;
+            }
+
+            table {
+                font-size: 0.85em;
+            }
+
+            th, td {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header with Summary Stats -->
+        <div class="header">
+            <h1>PebbleOS Contribution Report</h1>
+            <p class="subtitle">Comprehensive analysis of contributor activity and impact</p>
+            <div class="date-range">
+                Project Timeline: Dec 2024 - Nov 2025 (11 months)
+            </div>
+            <div class="stats-summary">
+                <div class="stat-box">
+                    <span class="number">36</span>
+                    <span class="label">Unique Contributors</span>
+                </div>
+                <div class="stat-box">
+                    <span class="number">1,431</span>
+                    <span class="label">Total Commits</span>
+                </div>
+                <div class="stat-box">
+                    <span class="number">3.09M</span>
+                    <span class="label">Total Line Changes</span>
+                </div>
+                <div class="stat-box">
+                    <span class="number">11,403</span>
+                    <span class="label">Files Modified</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 1: Total Monthly Commits Over Time -->
+        <div class="section">
+            <h2>Total Monthly Commits Over Time</h2>
+            <p>Monthly commit activity for top 10 contributors plus "All Others" aggregated</p>
+
+            <div class="chart-container">
+                <canvas id="monthlyCommitsChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Section 2: Cumulative Contributions Over Time -->
+        <div class="section">
+            <h2>Cumulative Contributions Over Time</h2>
+            <p>Cumulative commit count growth for top contributors over time</p>
+
+            <div class="chart-container">
+                <canvas id="cumulativeChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Section 3: Lines of Code Changed by Time Period -->
+        <div class="section">
+            <h2>Lines of Code Changed by Month</h2>
+            <p>Monthly LOC changes broken down by top contributors - stacked view</p>
+
+            <div class="chart-container">
+                <canvas id="locStackedChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Section 4: Top 15 Contributors -->
+        <div class="section">
+            <h2>Top 15 Contributors (Full Project History)</h2>
+            <p>Contributors ranked by total lines changed with their top modified files</p>
+
+            <table id="top15Table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Contributor</th>
+                        <th>Commits</th>
+                        <th>Lines Added</th>
+                        <th>Lines Removed</th>
+                        <th>Top Modified Files</th>
+                    </tr>
+                </thead>
+                <tbody id="top15Body">
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Section 5: All Contributors -->
+        <div class="section">
+            <h2>All Contributors</h2>
+            <p>Complete list of all 36 contributors to PebbleOS</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Contributor</th>
+                        <th>Commits</th>
+                        <th>Lines Changed</th>
+                    </tr>
+                </thead>
+                <tbody id="allContributorsTable">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="footer">
+            <p>Generated on <span id="reportDate"></span></p>
+            <p>Report generated using the Modernize Agent Framework</p>
+            <p style="margin-top: 10px; color: #888;">PebbleOS - Open Source Pebble Smartwatch Firmware</p>
+        </div>
+    </div>
+
+    <script>
+        // Report data
+        const reportData = {
+            summary: {
+                totalContributors: 36,
+                totalCommits: 1431,
+                totalLines: 3085054,
+                filesModified: 11403
+            },
+            monthlyCommits: {
+                labels: ['Dec 2024', 'Jan 2025', 'Feb 2025', 'Mar 2025', 'Apr 2025', 'May 2025', 'Jun 2025', 'Jul 2025', 'Aug 2025', 'Sep 2025', 'Oct 2025', 'Nov 2025'],
+                datasets: [
+                    {
+                        label: 'Gerard Marull-Paretas',
+                        data: [0, 27, 17, 67, 113, 142, 87, 122, 181, 88, 101, 53],
+                        borderColor: '#667eea',
+                        backgroundColor: '#667eea33',
+                        tension: 0.4,
+                        fill: false
+                    },
+                    {
+                        label: 'Joshua Jun',
+                        data: [0, 0, 2, 1, 0, 4, 0, 16, 23, 40, 35, 38],
+                        borderColor: '#764ba2',
+                        backgroundColor: '#764ba233',
+                        tension: 0.4,
+                        fill: false
+                    },
+                    {
+                        label: 'Joshua Wise',
+                        data: [0, 23, 0, 8, 11, 14, 0, 20, 21, 11, 12, 0],
+                        borderColor: '#f093fb',
+                        backgroundColor: '#f093fb33',
+                        tension: 0.4,
+                        fill: false
+                    },
+                    {
+                        label: 'Liam McLoughlin',
+                        data: [0, 0, 22, 26, 2, 0, 0, 0, 0, 0, 0, 0],
+                        borderColor: '#4facfe',
+                        backgroundColor: '#4facfe33',
+                        tension: 0.4,
+                        fill: false
+                    },
+                    {
+                        label: 'Yang Jiyun',
+                        data: [0, 0, 0, 0, 0, 0, 0, 0, 2, 16, 9, 8],
+                        borderColor: '#43e97b',
+                        backgroundColor: '#43e97b33',
+                        tension: 0.4,
+                        fill: false
+                    },
+                    {
+                        label: 'HaiLong Yang',
+                        data: [0, 0, 0, 0, 0, 0, 0, 4, 8, 9, 4, 3],
+                        borderColor: '#fa709a',
+                        backgroundColor: '#fa709a33',
+                        tension: 0.4,
+                        fill: false
+                    },
+                    {
+                        label: 'Matthew Wardrop',
+                        data: [0, 0, 0, 0, 0, 0, 0, 0, 16, 0, 0, 0],
+                        borderColor: '#fee140',
+                        backgroundColor: '#fee14033',
+                        tension: 0.4,
+                        fill: false
+                    },
+                    {
+                        label: 'All Others',
+                        data: [1, 2, 31, 4, 5, 7, 15, 17, 2, 22, 21, 14],
+                        borderColor: '#30cfd0',
+                        backgroundColor: '#30cfd033',
+                        tension: 0.4,
+                        fill: false,
+                        borderDash: [5, 5]
+                    }
+                ]
+            },
+            cumulative: {
+                labels: ['Dec 2024', 'Jan 2025', 'Feb 2025', 'Mar 2025', 'Apr 2025', 'May 2025', 'Jun 2025', 'Jul 2025', 'Aug 2025', 'Sep 2025', 'Oct 2025', 'Nov 2025'],
+                datasets: [
+                    {
+                        label: 'Gerard Marull-Paretas',
+                        data: [0, 27, 44, 111, 224, 366, 453, 575, 756, 844, 945, 998],
+                        borderColor: '#667eea',
+                        backgroundColor: '#667eea33',
+                        tension: 0.4,
+                        fill: false
+                    },
+                    {
+                        label: 'Joshua Jun',
+                        data: [0, 0, 2, 3, 3, 7, 7, 23, 46, 86, 121, 159],
+                        borderColor: '#764ba2',
+                        backgroundColor: '#764ba233',
+                        tension: 0.4,
+                        fill: false
+                    },
+                    {
+                        label: 'Joshua Wise',
+                        data: [0, 23, 23, 31, 42, 56, 56, 76, 97, 108, 120, 120],
+                        borderColor: '#f093fb',
+                        backgroundColor: '#f093fb33',
+                        tension: 0.4,
+                        fill: false
+                    },
+                    {
+                        label: 'Liam McLoughlin',
+                        data: [0, 0, 22, 48, 50, 50, 50, 50, 50, 50, 50, 50],
+                        borderColor: '#4facfe',
+                        backgroundColor: '#4facfe33',
+                        tension: 0.4,
+                        fill: false
+                    },
+                    {
+                        label: 'Yang Jiyun',
+                        data: [0, 0, 0, 0, 0, 0, 0, 0, 2, 18, 27, 35],
+                        borderColor: '#43e97b',
+                        backgroundColor: '#43e97b33',
+                        tension: 0.4,
+                        fill: false
+                    },
+                    {
+                        label: 'HaiLong Yang',
+                        data: [0, 0, 0, 0, 0, 0, 0, 4, 12, 21, 25, 28],
+                        borderColor: '#fa709a',
+                        backgroundColor: '#fa709a33',
+                        tension: 0.4,
+                        fill: false
+                    }
+                ]
+            },
+            locByPeriod: {
+                labels: ['Dec 2024', 'Jan 2025', 'Feb 2025', 'Mar 2025', 'Apr 2025', 'May 2025', 'Jun 2025', 'Jul 2025', 'Aug 2025', 'Sep 2025', 'Oct 2025', 'Nov 2025'],
+                datasets: [
+                    {
+                        label: 'Matthieu Jeanson',
+                        data: [2530973, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        backgroundColor: '#667eea',
+                        stack: 'Stack 0'
+                    },
+                    {
+                        label: 'Gerard Marull-Paretas',
+                        data: [0, 198199, 370, 84707, 5559, 7822, 8080, 4746, 14011, 46910, 4555, 102744],
+                        backgroundColor: '#764ba2',
+                        stack: 'Stack 0'
+                    },
+                    {
+                        label: 'Joshua Wise',
+                        data: [0, 25489, 0, 3925, 668, 726, 0, 611, 1548, 571, 595, 0],
+                        backgroundColor: '#f093fb',
+                        stack: 'Stack 0'
+                    },
+                    {
+                        label: 'Joshua Jun',
+                        data: [0, 0, 9, 2, 0, 2968, 0, 1348, 2082, 2199, 1768, 1818],
+                        backgroundColor: '#4facfe',
+                        stack: 'Stack 0'
+                    },
+                    {
+                        label: 'Steve Penna',
+                        data: [0, 0, 0, 0, 0, 0, 129, 50, 0, 11069, 0, 0],
+                        backgroundColor: '#43e97b',
+                        stack: 'Stack 0'
+                    },
+                    {
+                        label: 'Liam McLoughlin',
+                        data: [0, 0, 4321, 3495, 289, 0, 0, 0, 0, 0, 0, 0],
+                        backgroundColor: '#fa709a',
+                        stack: 'Stack 0'
+                    },
+                    {
+                        label: 'Yang Jiyun',
+                        data: [0, 0, 0, 0, 0, 0, 0, 0, 636, 1886, 605, 1035],
+                        backgroundColor: '#fee140',
+                        stack: 'Stack 0'
+                    },
+                    {
+                        label: 'HaiLong Yang',
+                        data: [0, 0, 0, 0, 0, 0, 0, 405, 648, 546, 307, 50],
+                        backgroundColor: '#30cfd0',
+                        stack: 'Stack 0'
+                    },
+                    {
+                        label: 'All Others',
+                        data: [0, 47, 451, 242, 370, 3015, 1398, 631, 1288, 246, 2506, 234],
+                        backgroundColor: '#a8edea',
+                        stack: 'Stack 0'
+                    }
+                ]
+            },
+            top15: [
+                { name: 'Matthieu Jeanson', commits: 1, linesAdded: 2530973, linesRemoved: 0, files: ['Initial codebase import'] },
+                { name: 'Gerard Marull-Paretas', commits: 998, linesAdded: 101354, linesRemoved: 376349, files: ['Major refactoring across codebase', 'SPDX license migration', 'Driver updates and cleanup'] },
+                { name: 'Joshua Wise', commits: 120, linesAdded: 32773, linesRemoved: 1360, files: ['Core firmware development', 'Architecture improvements'] },
+                { name: 'Joshua Jun', commits: 159, linesAdded: 10297, linesRemoved: 1897, files: ['Feature development', 'Bug fixes'] },
+                { name: 'Steve Penna', commits: 8, linesAdded: 7256, linesRemoved: 3992, files: ['resources/normal/base/tzdata/timezones_olson.txt', 'third_party/memfault/port/'] },
+                { name: 'Liam McLoughlin', commits: 50, linesAdded: 7454, linesRemoved: 651, files: ['src/fw/drivers/hrm/as7000.c', 'src/fw/drivers/mic/stm32/', 'src/bluetooth-fw/nimble/'] },
+                { name: 'Yang Jiyun', commits: 35, linesAdded: 4006, linesRemoved: 156, files: ['src/fw/drivers/imu/lis2dw12/', 'src/fw/drivers/sf32lb52/audio/', 'src/fw/drivers/touch/cst816/'] },
+                { name: 'HaiLong Yang', commits: 28, linesAdded: 1684, linesRemoved: 272, files: ['src/fw/drivers/flash/gd25q256e.c', 'src/fw/drivers/sf32lb52/', 'src/fw/freertos_application.c'] },
+                { name: 'Matthew Wardrop', commits: 16, linesAdded: 1156, linesRemoved: 105, files: ['src/fw/drivers/imu/lsm6dso/lsm6dso.c', 'src/fw/drivers/imu/mmc5603nj/'] },
+                { name: 'Elad Dvash', commits: 6, linesAdded: 855, linesRemoved: 330, files: ['src/fw/apps/system_apps/settings/settings_themes.c', 'src/fw/apps/system_apps/toggle/backlight_state.c'] },
+                { name: 'Noah Pendleton', commits: 5, linesAdded: 597, linesRemoved: 20, files: ['Firmware enhancements'] },
+                { name: 'HalfSweet', commits: 11, linesAdded: 553, linesRemoved: 24, files: ['src/fw/drivers/sf32lb52/exti.c', 'src/fw/drivers/sf32lb52/gpio.c'] },
+                { name: 'Manatsawin Hanmongkolchai', commits: 3, linesAdded: 120, linesRemoved: 274, files: ['Code cleanup'] },
+                { name: 'Alice England', commits: 8, linesAdded: 61, linesRemoved: 219, files: ['Bug fixes and improvements'] },
+                { name: 'w200024212', commits: 5, linesAdded: 233, linesRemoved: 38, files: ['src/fw/drivers/sf32lb52/pwm.c', 'src/fw/drivers/sf32lb52/rng.c'] }
+            ],
+            allContributors: [
+                { name: 'Gerard Marull-Paretas', commits: 998, lines: 477703 },
+                { name: 'Joshua Jun', commits: 159, lines: 12194 },
+                { name: 'Joshua Wise', commits: 120, lines: 34133 },
+                { name: 'Liam McLoughlin', commits: 50, lines: 8105 },
+                { name: 'Yang Jiyun', commits: 35, lines: 4162 },
+                { name: 'HaiLong Yang', commits: 28, lines: 1956 },
+                { name: 'Matthew Wardrop', commits: 16, lines: 1261 },
+                { name: 'Claudio', commits: 10, lines: 205 },
+                { name: 'HalfSweet', commits: 11, lines: 577 },
+                { name: 'Steve Penna', commits: 8, lines: 11248 },
+                { name: 'Alice England', commits: 8, lines: 280 },
+                { name: 'Eric Migicovsky', commits: 6, lines: 65 },
+                { name: 'Elad Dvash', commits: 6, lines: 1185 },
+                { name: 'w200024212', commits: 5, lines: 271 },
+                { name: 'Noah Pendleton', commits: 5, lines: 617 },
+                { name: 'Griffin Li', commits: 5, lines: 130 },
+                { name: 'ganghe', commits: 3, lines: 224 },
+                { name: 'Manatsawin Hanmongkolchai', commits: 3, lines: 394 },
+                { name: 'Xiaoming Xi', commits: 2, lines: 8 },
+                { name: 'Mike Wadsten', commits: 2, lines: 13 },
+                { name: 'Martin Weinelt', commits: 2, lines: 6 },
+                { name: 'Matthieu Jeanson', commits: 1, lines: 2530973 },
+                { name: 'Thomas Sarlandie', commits: 1, lines: 14 },
+                { name: 'Stasia Michalska', commits: 1, lines: 74 },
+                { name: 'Rocco', commits: 1, lines: 7 },
+                { name: 's00se', commits: 1, lines: 6 },
+                { name: 'Magdalena Kasenberg', commits: 1, lines: 2 },
+                { name: 'Lavender Glaab', commits: 1, lines: 8 },
+                { name: 'Jerrywang', commits: 1, lines: 156 },
+                { name: 'Gang He', commits: 1, lines: 24 },
+                { name: 'DX37', commits: 1, lines: 6 },
+                { name: 'crc-32', commits: 1, lines: 35 },
+                { name: 'Colin Suckow', commits: 1, lines: 164 },
+                { name: 'Bradley Pankow', commits: 1, lines: 21 },
+                { name: 'Bogdan Olar', commits: 1, lines: 21 },
+                { name: 'Andreas Shimokawa', commits: 1, lines: 6 }
+            ]
+        };
+
+        // Set report date
+        document.getElementById('reportDate').textContent = new Date().toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        // Chart.js configuration
+        Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        Chart.defaults.color = '#666';
+
+        // Monthly Commits Chart
+        new Chart(document.getElementById('monthlyCommitsChart'), {
+            type: 'line',
+            data: reportData.monthlyCommits,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { padding: 15, usePointStyle: true }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Number of Commits' }
+                    },
+                    x: {
+                        title: { display: true, text: 'Month' }
+                    }
+                },
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                }
+            }
+        });
+
+        // Cumulative Contributions Chart
+        new Chart(document.getElementById('cumulativeChart'), {
+            type: 'line',
+            data: reportData.cumulative,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { padding: 15, usePointStyle: true }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Cumulative Commits' }
+                    },
+                    x: {
+                        title: { display: true, text: 'Month' }
+                    }
+                }
+            }
+        });
+
+        // LOC Stacked Bar Chart (excluding initial import for visibility)
+        const locDataWithoutImport = {
+            labels: reportData.locByPeriod.labels.slice(1),
+            datasets: reportData.locByPeriod.datasets.slice(1).map(function(ds) {
+                return {
+                    label: ds.label,
+                    data: ds.data.slice(1),
+                    backgroundColor: ds.backgroundColor,
+                    stack: ds.stack
+                };
+            })
+        };
+
+        new Chart(document.getElementById('locStackedChart'), {
+            type: 'bar',
+            data: locDataWithoutImport,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Note: Initial codebase import (2.5M lines in Dec 2024) excluded for clarity',
+                        font: { size: 12, style: 'italic', weight: 'normal' },
+                        color: '#888'
+                    },
+                    legend: {
+                        position: 'bottom',
+                        labels: { padding: 15, usePointStyle: true }
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        title: { display: true, text: 'Month' }
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        title: { display: true, text: 'Lines Changed' }
+                    }
+                }
+            }
+        });
+
+        // Populate top 15 table using safe DOM methods
+        var top15Body = document.getElementById('top15Body');
+        var rankClasses = ['gold', 'silver', 'bronze'];
+
+        reportData.top15.forEach(function(contributor, index) {
+            var row = document.createElement('tr');
+
+            // Rank cell
+            var rankCell = document.createElement('td');
+            var rankSpan = document.createElement('span');
+            rankSpan.className = 'rank' + (index < 3 ? ' ' + rankClasses[index] : '');
+            rankSpan.textContent = String(index + 1);
+            rankCell.appendChild(rankSpan);
+            row.appendChild(rankCell);
+
+            // Name cell
+            var nameCell = document.createElement('td');
+            var nameStrong = document.createElement('strong');
+            nameStrong.textContent = contributor.name;
+            nameCell.appendChild(nameStrong);
+            row.appendChild(nameCell);
+
+            // Commits cell
+            var commitsCell = document.createElement('td');
+            commitsCell.textContent = contributor.commits.toLocaleString();
+            row.appendChild(commitsCell);
+
+            // Lines added cell
+            var addedCell = document.createElement('td');
+            addedCell.textContent = contributor.linesAdded.toLocaleString();
+            row.appendChild(addedCell);
+
+            // Lines removed cell
+            var removedCell = document.createElement('td');
+            removedCell.textContent = contributor.linesRemoved.toLocaleString();
+            row.appendChild(removedCell);
+
+            // Files cell
+            var filesCell = document.createElement('td');
+            var filesList = document.createElement('ul');
+            filesList.className = 'file-list';
+            contributor.files.forEach(function(file) {
+                var li = document.createElement('li');
+                li.textContent = file;
+                filesList.appendChild(li);
+            });
+            filesCell.appendChild(filesList);
+            row.appendChild(filesCell);
+
+            top15Body.appendChild(row);
+        });
+
+        // Populate all contributors table using safe DOM methods
+        var allContributorsBody = document.getElementById('allContributorsTable');
+        reportData.allContributors.forEach(function(contributor, index) {
+            var row = document.createElement('tr');
+
+            // Index cell
+            var indexCell = document.createElement('td');
+            indexCell.textContent = String(index + 1);
+            row.appendChild(indexCell);
+
+            // Name cell
+            var nameCell = document.createElement('td');
+            var nameStrong = document.createElement('strong');
+            nameStrong.textContent = contributor.name;
+            nameCell.appendChild(nameStrong);
+            row.appendChild(nameCell);
+
+            // Commits cell
+            var commitsCell = document.createElement('td');
+            commitsCell.textContent = contributor.commits.toLocaleString();
+            row.appendChild(commitsCell);
+
+            // Lines cell
+            var linesCell = document.createElement('td');
+            linesCell.textContent = contributor.lines.toLocaleString();
+            row.appendChild(linesCell);
+
+            allContributorsBody.appendChild(row);
+        });
+    </script>
+</body>
+</html>
